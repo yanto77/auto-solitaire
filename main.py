@@ -17,8 +17,8 @@ def get_initial_state():
             continue
 
         try:
-            for box in pyscreeze.locateAll(fpath, screen):
-                results.append((fpath, box))
+            for box in pyscreeze.locateAll(fpath, screen, grayscale=False):
+                results.append([fpath, box])
         except pyscreeze.ImageNotFoundException:
             continue
 
@@ -27,6 +27,22 @@ def get_initial_state():
 
     return results
 
+def convert_state(state):
+state = list(state)
+
+# Convert to indices
+min_x = min([box.left for (path, box) in state])
+min_y = min([box.top for (path, box) in state])
+
+for i in range(len(state)):
+    state[i][1] = state[i][1]._replace(
+        left = int((state[i][1].left - min_x) / 130),
+        top = int((state[i][1].top - min_y) / 30))
+
+        state[i][0] = state[i][0].replace('img/', '').replace('.png', '')
+
+state.sort(key = lambda x: (x[1].left, x[1].top))
+    return state
 
 # state = get_initial_state()
 # with open('state.pickle', 'wb') as out_file:
@@ -35,24 +51,7 @@ def get_initial_state():
 with open('state.pickle', 'rb') as in_file:
     state = pickle.load(in_file)
 
-state = list(state)
-
-# Convert to indices
-min_x = min([box.left for (path, box) in state])
-min_y = min([box.top for (path, box) in state])
-for i in range(len(state)):
-    state[i][1] = state[i][1]._replace(
-        left = int((state[i][1].left - min_x) / 130),
-        top = int((state[i][1].top - min_y) / 30))
-
-state.sort(key = lambda x: (x[1].left, x[1].top))
+state = convert_state(state)
 
 for (path, box) in state:
-    path = path.replace('img/', '').replace('.png', '')
     print(box.left, box.top, path)
-
-
-# TODO:
-# - doesn't recognize specific ace
-# - mixes between red/black 10
-# -> try 30x30 images ?
