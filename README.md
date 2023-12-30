@@ -1,12 +1,16 @@
+# auto-solitaire
 
+Automatic solver for [EXAPUNKS's](https://store.steampowered.com/app/716490/EXAPUNKS/) solitaire minigame. Demo: [video](./docs/demo.webm).
 
-Install:
+Dependencies:
 
-    pip3 install pyautogui pyscreeze
-    apt install gnome-screenshot
-    apt install python3-opencv
+```
+$ apt install python3-opencv
+$ pip3 install pyautogui pyscreeze
+```
 
+Usage:
+1. Run solitaire from EXAPUNKS on one screen.
+2. Run `python3 src/main.py` on another screen.
 
-Refs:
-- https://pyautogui.readthedocs.io/en/latest/
-- https://github.com/asweigart/pyscreeze
+Note: The solution includes hard-coded values for finding the card and mouse locations. Your screen may require different values.
