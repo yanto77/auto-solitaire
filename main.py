@@ -1,57 +1,59 @@
-from os import listdir
-from os.path import isfile, join
-
-import pyautogui as gui
-import pyscreeze
+# import pyautogui as gui
 import pickle
+import heapq
 
-def get_initial_state():
-    results = []
+from utils import timing
+from screen_reader import ScreenReader
+from state import State
 
-    screen = pyscreeze.screenshot()
-    FILEPATH = 'img/'
+@timing
+def find_winning_moves(initial):
+    print('Finding winning moves for ...\n{}'.format(initial))
 
-    for fname in listdir(FILEPATH):
-        fpath = join(FILEPATH, fname)
-        if not isfile(fpath):
-            continue
+    states = [initial]
+    seen_states = set()
+    idx = 0
+    while states:
+        s1 = heapq.heappop(states)
+        for move in s1.get_moves():
+            idx += 1
+            s2 = s1.take_move(move)
 
-        try:
-            for box in pyscreeze.locateAll(fpath, screen, grayscale=False):
-                results.append([fpath, box])
-        except pyscreeze.ImageNotFoundException:
-            continue
+            if s2 not in seen_states:
+                if (idx % 10 == 0):
+                    print("Evaluated {} steps, visited {}, unvisited {} .....".format(idx, len(seen_states), len(states)), end='\r')
 
-    if len(results) != 36:
-        raise Exception("Couldn't find all cards.")
+                unfinished = sum(1 for i in range(9) if not s2.is_stack_finished(i))
+                if unfinished == 1:
+                    print("Evaluated {} steps, visited {}, unvisited {} .....\n".format(idx, len(seen_states), len(states)))
+                    return s2.moves
+                # else:
+                #     input("Press Enter to continue...")
+                #     print("\x1B[2J\x1B[H") # clear screen and move cursor to top-left corner
 
-    return results
+                seen_states.add(s2)
+                heapq.heappush(states, s2)
 
-def convert_state(state):
-state = list(state)
+    raise Exception("couldn't win the game :(")
 
-# Convert to indices
-min_x = min([box.left for (path, box) in state])
-min_y = min([box.top for (path, box) in state])
+if __name__ == "__main__":
+    initial = ScreenReader.get_initial_state()
+    with open('state.pickle', 'wb') as out_file:
+        pickle.dump(initial, out_file)
 
-for i in range(len(state)):
-    state[i][1] = state[i][1]._replace(
-        left = int((state[i][1].left - min_x) / 130),
-        top = int((state[i][1].top - min_y) / 30))
+    with open('state.pickle', 'rb') as in_file:
+        initial = pickle.load(in_file)
 
-        state[i][0] = state[i][0].replace('img/', '').replace('.png', '')
+    moves = find_winning_moves(initial)
+    print(moves)
 
-state.sort(key = lambda x: (x[1].left, x[1].top))
-    return state
+    # s1 = initial
+    # for move in moves:
+    #     s2 = s1.take_move(move)
+    #     print('REPLAY')
+    #     print('Pre:\n{}'.format(s1))
+    #     print('Post:\n{}'.format(s2))
 
-# state = get_initial_state()
-# with open('state.pickle', 'wb') as out_file:
-#     pickle.dump(state, out_file)
-
-with open('state.pickle', 'rb') as in_file:
-    state = pickle.load(in_file)
-
-state = convert_state(state)
-
-for (path, box) in state:
-    print(box.left, box.top, path)
+    #     input("Press Enter to continue...")
+    #     print("\x1B[2J\x1B[H") # clear screen and move cursor to top-left corner
+    #     s1 = s2
