@@ -2,6 +2,8 @@
 import pyscreeze
 from os import listdir
 from os.path import isfile, join
+from concurrent.futures import ThreadPoolExecutor
+from itertools import repeat
 
 from utils import timing
 from state import State
@@ -25,7 +27,7 @@ CARD_TYPES = {
     'img/red10.png': (10, 2),
 }
 
-FILEPATH = 'img/'
+MAX_WORKERS = 8
 
 class ScreenReader():
     @staticmethod
@@ -37,22 +39,34 @@ class ScreenReader():
         return screen
 
     @staticmethod
+    def locateSingle(screen, fpath):
+        try:
+            results = []
+            for box in pyscreeze.locateAll(fpath, screen, grayscale=False):
+                results.append([fpath, box])
+            return results
+        except pyscreeze.ImageNotFoundException:
+            return None
+
+    @staticmethod
     @timing
     def find_cards(screen):
-        cards = []
+        files = []
+        FILEPATH = 'img/'
         for fname in listdir(FILEPATH):
             fpath = join(FILEPATH, fname)
-            if not isfile(fpath):
-                continue
+            if isfile(fpath):
+                files.append(fpath)
 
-            try:
-                for box in pyscreeze.locateAll(fpath, screen, grayscale=False):
-                    cards.append([fpath, box])
-            except pyscreeze.ImageNotFoundException:
-                continue
+        cards = []
+        with ThreadPoolExecutor(MAX_WORKERS) as pool:
+            result = pool.map(ScreenReader.locateSingle, repeat(screen), files)
+            for res in result:
+                if res is not None:
+                    cards.extend(res)
 
         if len(cards) != 36:
-            raise Exception("Couldn't find all cards.")
+            raise Exception("Couldn't find all cards. Found: {}.".format(len(cards)))
 
         return cards
 
