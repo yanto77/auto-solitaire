@@ -29,13 +29,16 @@ CARD_TYPES = {
 
 MAX_WORKERS = 8
 
+SCREEN_DX = 130
+SCREEN_DY = 30
+
 class ScreenReader():
     @staticmethod
     @timing
     def get_screen():
         # Take a screenshot
-        # screen = pyscreeze.screenshot() # TODO
-        screen = pyscreeze._load_cv2('foo.png', grayscale=False)
+        screen = pyscreeze.screenshot()
+        # screen = pyscreeze._load_cv2('foo.png', grayscale=False)
         return screen
 
     @staticmethod
@@ -80,9 +83,9 @@ class ScreenReader():
         min_y = min([box.top for (path, box) in cards])
         for i in range(len(cards)):
             cards[i][1] = cards[i][1]._replace(
-                left = int((cards[i][1].left - min_x) / 130),
-                top = int((cards[i][1].top - min_y) / 30))
+                left = int((cards[i][1].left - min_x) / SCREEN_DX),
+                top = int((cards[i][1].top - min_y) / SCREEN_DY))
             cards[i][0] = CARD_TYPES[cards[i][0]]
 
         cards.sort(key = lambda x: (x[1].left, x[1].top))
-        return State(cards)
+        return State(cards, (min_y, min_x))

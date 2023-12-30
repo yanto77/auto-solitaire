@@ -4,7 +4,8 @@ SUITES = ['♠', '♣', '♦', '♥']
 COLORS = ['\033[38m', '\033[38m', '\033[31m', '\033[31m']
 
 class State():
-    def __init__(self, cards):
+    def __init__(self, cards, top_left):
+        self.top_left = top_left
         self.moves = []
         self.stacks = []
         for i in range(9 + 1): # 9 stack, 1 spare
@@ -49,7 +50,9 @@ class State():
     def __lt__(self, other):
         unfinished1 = sum(1 for i in range(9) if not self.is_stack_finished(i))
         unfinished2 = sum(1 for i in range(9) if not other.is_stack_finished(i))
-        return unfinished1 < unfinished2
+        moves1 = len(self.moves)
+        moves2 = len(other.moves)
+        return (unfinished1, moves1) < (unfinished2, moves2)
 
     def __valid_sequence(self, bottom, top):
         (bn, bs), (tn, ts) = (bottom, top)
